@@ -11,6 +11,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "node-schedule": "^2.1.1"
+    "node-schedule": "^2.1.1",
+    "nodemon": "^2.0.22",
+    "tedious": "^16.0.0"
   }
 }
