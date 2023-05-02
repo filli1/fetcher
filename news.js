@@ -13,14 +13,13 @@ let searchParameter = 'country=no'
 let newsUrlOrg = `https://newsapi.org/v2/top-headlines?${searchParameter}&pagesize=15`
 let newsUrlIo = `https://newsdata.io/api/1/news?apikey=${apiKeyIo}&country=dk`
 
+const truncString = (str, max) => {
+    return str === null || str === undefined ? null : (str.length > max ? str.substr(0, max - 3) + '...' : str);
+}
 
 
 let headersOrg = {
     'Authorization': `${apiKeyOrg}`
-}
-
-let headersIo = {
-    'Authorization': `${apiKeyIo}`
 }
 
 let news = []
@@ -40,54 +39,18 @@ const newsOrg = async () => {
 newsOrg().then(data => {
     //Here the data should be inserted into the database
     // console.log(data.articles[0].source)
-    let articles = data.articles;
+    let articles2 = data.articles;
+    console.log(articles2)
     for (let i = 0; i < articles.length; i++) {
         //Makes sure that the fields are not too long for the database
         news.push({
-            title: articles[i].title === null ? null : articles[i].title.substring(0, 255),
-            imageUrl: articles[i].urlToImage === null ? null : articles[i].urlToImage.substring(0, 512),
-            source: articles[i].source.name === null ? null : articles[i].source.name.substring(0, 255),
+            title: truncString(articles[i].title, 255),
+            imageUrl: truncString(articles[i].urlToImage, 512),
+            source: truncString(articles[i].source.name, 255),
             publishedAt: articles[i].publishedAt,
-            author: articles[i].author === null ? null : articles[i].author.substring(0, 255),
-            url: articles[i].url === null ? null : articles[i].url.substring(0, 512),
-            description: articles[i].description === null ? null : articles[i].description.substring(0, 255)
+            author: truncString(articles[i].author, 255),
+            url: truncString(articles[i].url, 512),
+            description: truncString(articles[i].description, 255)
         })
     }
 })
-
-
-
-//Fetches the news from the news api 2
-const newsIo = async () => {
-    let response = await fetch(newsUrlIo,
-        {
-            method: 'GET',
-            headers: headersIo
-        }
-    );
-    return response.json();
-}
-
-newsIo().then(data => {
-    //Here the data should be inserted into the database
-    let articles = data.results;
-    //Here the counter is set to 15, because the endpoint does not allow to set it in the request
-    for (let i = 0; i < Math.min(15, articles.length); i++) {
-        //Makes sure that the fields are not too long for the database
-        news.push({
-            title: articles[i].title === null ? null : articles[i].title.substring(0, 255),
-            imageUrl: articles[i].image_url === null ? null : articles[i].image_url.substring(0, 512),
-            source: articles[i].creator === null ? null : articles[i].creator.substring(0, 255),
-            publishedAt: articles[i].published_date,
-            author: null,
-            url: articles[i].link === null ? null : articles[i].link.substring(0, 512),
-            description: articles[i].content === null ? null : articles[i].content.substring(0, 255)
-        })
-    }
-
-    //Inserts the news into the database
-    insertNews(news)
-})
-
-
-
