@@ -9,11 +9,13 @@ let apiKeyOrg = '4d438c96e5c54b938fe57e7e8626fe0b'
 //News API key (newsdata.io)
 let apiKeyIo = 'pub_21427c59bc7f46af1620146c49ca0a37d767a'
 
-
+//Defines the endpoints to retrieve the news from
 let searchParameter = 'country=no'
 let newsUrlOrg = `https://newsapi.org/v2/top-headlines?${searchParameter}&pagesize=15`
 let newsUrlIo = `https://newsdata.io/api/1/news?apikey=${apiKeyIo}&country=dk`
 
+
+//Truncates a string to a given length
 const truncString = (str, max) => {
     return str === null || str === undefined ? null : (str.length > max ? str.substr(0, max - 3) + '...' : str);
 }
@@ -23,6 +25,7 @@ let headersOrg = {
     'Authorization': `${apiKeyOrg}`
 }
 
+//Creates an empty array to store the news in
 let news = []
 
 //Fetches the news from the news api 1
@@ -52,8 +55,6 @@ newsOrg().then(data => {
         })
     }
 
-    //Inserts the news into the database
-    //insertNews(news)
 })
 
 //Fetches the news from the news api 2
@@ -66,7 +67,7 @@ const newsIo = async () => {
     return response.json();
 }
 
-newsIo().then(data => {
+newsIo().then(async data => {
     //Here the data should be inserted into the database
     let articles = data.results;
     //Here the counter is set to 15, because the endpoint does not allow to set it in the request
@@ -84,11 +85,12 @@ newsIo().then(data => {
     }
 
     //Inserts the news into the database
-    insertNews(news)
+    await insertNews(news)
 })
 
 }
 
+//Makes the function available to other files
 module.exports = {
     newsFile: newsFile
 };
