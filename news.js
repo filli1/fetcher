@@ -26,7 +26,7 @@ let headersOrg = {
 }
 
 //Creates an empty array to store the news in
-let news = []
+let articlesToInsert = []
 
 //Fetches the news from the news api 1
 const newsOrg = async () => {
@@ -44,7 +44,7 @@ newsOrg().then(data => {
     let articles = data.articles;
     for (let i = 0; i < articles.length; i++) {
         //Makes sure that the fields are not too long for the database
-        news.push({
+        articlesToInsert.push({
             title: truncString(articles[i].title, 255),
             imageUrl: truncString(articles[i].urlToImage, 512),
             source: truncString(articles[i].source.name, 255),
@@ -73,7 +73,7 @@ newsIo().then(async data => {
     //Here the counter is set to 15, because the endpoint does not allow to set it in the request
     for (let i = 0; i < Math.min(15, articles.length); i++) {
         //Makes sure that the fields are not too long for the database
-        news.push({
+        articlesToInsert.push({
             title: truncString(articles[i].title, 255),
             imageUrl: truncString(articles[i].image_url, 512),
             source: truncString(articles[i].source_name, 255),
@@ -85,7 +85,7 @@ newsIo().then(async data => {
     }
 
     //Inserts the news into the database
-    await insertNews(news)
+    await insertNews(articlesToInsert)
 })
 
 }

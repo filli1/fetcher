@@ -12,46 +12,88 @@ const config = require('./config.json');
 //Inserts the news into the database
 function insertNews(news) {
   // The Promise resolves or rejects based on the completion of the asynchronous database operation.
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     //Makes a new connection to the database
     const connection = new Connection(config);
 
     //When the connection is established
-    connection.on('connect', function (error) {
+    connection.on('connect', async function (error) {
       if (error) {
         console.error('Error connecting to database:', error);
         reject(error);
       } else {
         console.log('Connected to database');
 
-        // Creates a new bulk load object
-        const bulkLoad = connection.newBulkLoad('news', function (error, rowCount) {
-          if (error) {
-            console.error('Error inserting rows:', error);
-            reject(error);
-          } else {
-            console.log('Inserted %d rows', rowCount);
+        try {
+          const existingUrls = await getExistingUrls(connection);
+          console.log('Existing URLs:', existingUrls)
+          const filteredNews = news.filter((article) => !existingUrls.has(article.url));
+          //console.log('Filtered news:', filteredNews);
+
+          if (filteredNews.length === 0) {
+            console.log('No new articles to insert');
             connection.close();
             resolve();
+            return;
           }
-        });
 
-        // Sets up the database table's SCHEMA
-        bulkLoad.addColumn('title', TYPES.NVarChar, { length: 255, nullable: true });
-        bulkLoad.addColumn('imageUrl', TYPES.NVarChar, { length: 512, nullable: true });
-        bulkLoad.addColumn('source', TYPES.NVarChar, { length: 255, nullable: true });
-        bulkLoad.addColumn('publishedAt', TYPES.DateTime, { nullable: true });
-        bulkLoad.addColumn('author', TYPES.NVarChar, { length: 255, nullable: true });
-        bulkLoad.addColumn('url', TYPES.NVarChar, { length: 512, nullable: true });
-        bulkLoad.addColumn('description', TYPES.NVarChar, { length: 255, nullable: true });
+           // Creates a new bulk load object
+            const options = { keepNulls: true , checkConstraints: true};
+            const bulkLoad = connection.newBulkLoad('news', options, function (error, rowCount) {
+              if (error) {
+                console.error('Error inserting rows:', error);
+                reject(error);
+              } else {
+                console.log('Inserted %d rows', rowCount);
+                connection.close();
+                resolve();
+              }
+            });
 
-        // Executes the bulk load
-        connection.execBulkLoad(bulkLoad, news);
+            // Sets up the database table's SCHEMA
+            bulkLoad.addColumn('title', TYPES.NVarChar, { length: 255, nullable: true });
+            bulkLoad.addColumn('imageUrl', TYPES.NVarChar, { length: 512, nullable: true });
+            bulkLoad.addColumn('source', TYPES.NVarChar, { length: 255, nullable: true });
+            bulkLoad.addColumn('publishedAt', TYPES.DateTime, { nullable: true });
+            bulkLoad.addColumn('author', TYPES.NVarChar, { length: 255, nullable: true });
+            bulkLoad.addColumn('url', TYPES.NVarChar, { length: 512, nullable: true });
+            bulkLoad.addColumn('description', TYPES.NVarChar, { length: 255, nullable: true });
+
+            // Executes the bulk load
+            connection.execBulkLoad(bulkLoad, filteredNews);
+        } catch (error) {
+          console.error('Error filtering news articles:', error);
+          reject(error);
+        }
+
+       
       }
     });
 
     // Attempts to connect to the database
     connection.connect();
+  });
+}
+
+function getExistingUrls(connection) {
+  return new Promise((resolve, reject) => {
+    const existingUrls = new Set();
+
+    const request = new Request('SELECT url FROM news', (error, rowCount) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(existingUrls);
+      }
+    });
+
+    request.on('row', (columns) => {
+      columns.forEach((column) => {
+        existingUrls.add(column.value);
+      });
+    });
+
+    connection.execSql(request);
   });
 }
 
