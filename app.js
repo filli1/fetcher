@@ -15,7 +15,7 @@ const { weatherFile } = require('./weather.js');
 const schedule = require('node-schedule');
 
 //Schedules the job to run every hour
-const job = schedule.scheduleJob('10 * * * * *', async function(){
+const job = schedule.scheduleJob('0 * * * *', async function(){
     console.log("Running the job")
     await newsFile();
     await weatherFile();
